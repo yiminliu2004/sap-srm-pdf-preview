@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "SAP SRM PDF Preview",
+  "version": "6.0",
+  "description": "Previews SAP document files (PDF and images) in a side panel instead of downloading them. No tab flash.",
+  "permissions": ["sidePanel", "offscreen"],
+  "host_permissions": ["*://nafiorip.minthgroup.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "SAP PDF Preview"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://srm.minthgroup.com/*"],
+      "all_frames": true,
+      "js": ["content-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["*://srm.minthgroup.com/*"],
+      "all_frames": true,
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
