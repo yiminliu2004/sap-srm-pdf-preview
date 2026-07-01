@@ -18,6 +18,14 @@ function addPopButton() {
     "</svg>";
   b.addEventListener("click", () => {
     chrome.runtime.sendMessage({ type: "openWindow" });
+    // Give the message a moment to reach the background, then close the panel.
+    setTimeout(() => {
+      try {
+        window.close();
+      } catch (e) {
+        /* ignore if the panel can't self-close */
+      }
+    }, 120);
   });
   document.documentElement.appendChild(b);
 }
