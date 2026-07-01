@@ -1,0 +1,33 @@
+name: Build and Release
+
+# Rebuilds the extension ZIP and publishes/updates a release every time
+# code is pushed to main. The release is tagged with the version from
+# manifest.json (e.g. v6.1).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Read version from manifest
+        id: ver
+        run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build ZIP
+        run: zip -r sap-srm-pdf-preview.zip . -x ".git/*" ".github/*" "*.zip"
+
+      - name: Publish/update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: v${{ steps.ver.outputs.version }}
+          files: sap-srm-pdf-preview.zip
