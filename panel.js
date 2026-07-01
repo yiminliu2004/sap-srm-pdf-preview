@@ -425,6 +425,29 @@ chrome.runtime.onMessage.addListener((msg) => {
 
 addPopButton();
 
+// Show a setup prompt if the SAP site hasn't been configured yet.
+function showSetup() {
+  const c = clearContent();
+  const d = document.createElement("div");
+  d.id = "status";
+  d.textContent =
+    "This extension isn't set up yet.\n\nClick below to enter your SAP site address.";
+  const btn = document.createElement("button");
+  btn.textContent = "Open settings";
+  btn.style.cssText =
+    "display:block;margin-top:14px;background:#4a4e51;color:#fff;border:0;" +
+    "border-radius:4px;padding:8px 14px;font-size:14px;cursor:pointer;";
+  btn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  d.appendChild(btn);
+  c.appendChild(d);
+}
+
+if (!isPopup) {
+  chrome.storage.local.get(["portalPattern"], (cfg) => {
+    if (!cfg || !cfg.portalPattern) showSetup();
+  });
+}
+
 // If a file was already fetched before this panel finished opening, grab it.
 chrome.runtime.sendMessage({ type: "getPending" }, (resp) => {
   if (chrome.runtime.lastError || !resp) return;

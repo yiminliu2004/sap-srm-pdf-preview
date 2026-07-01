@@ -1,14 +1,16 @@
-// SAP SRM PDF Preview (no-flash version)
+// SAP SRM PDF Preview (no-flash version, user-configured site)
+//
+// The SAP site address is NOT hardcoded. The user enters it on the settings
+// page; we then request permission for that site and register the content
+// scripts for it dynamically.
 //
 // Flow when the user clicks a 下载 link:
-//   1. content.js sees the click (a real user gesture) and asks us to open the
-//      side panel AND to warm up a hidden "offscreen" page that will do the
-//      fetch. Warming it up now means it's ready before SAP hands over its
-//      one-time document URL, so we don't lose the race.
+//   1. content.js sees the click and asks us to open the side panel AND warm
+//      up a hidden "offscreen" page that will do the fetch.
 //   2. content-main.js intercepts SAP's window.open call (so no tab flashes)
 //      and forwards the document URL to us.
-//   3. We tell the offscreen page to fetch the file once, turn it into base64,
-//      and send it back.
+//   3. The offscreen page fetches the file once, turns it into base64, sends
+//      it back.
 //   4. We hand the data to the side panel, which renders it. No download.
 
 let pendingData = null;
@@ -35,9 +37,54 @@ async function ensureOffscreen() {
   }
 }
 
-// Open a separate preview window, or focus the existing one so we never end
-// up with two. Once open, the window updates itself because it listens for the
-// same "renderData" broadcast that the side panel does.
+// --- Dynamic content-script registration (host is user-configured) ---
+
+async function registerScripts(portalPattern) {
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts();
+    const ids = existing
+      .filter((s) => s.id === "sap-main" || s.id === "sap-iso")
+      .map((s) => s.id);
+    if (ids.length) await chrome.scripting.unregisterContentScripts({ ids });
+  } catch (e) {
+    /* nothing registered yet */
+  }
+  await chrome.scripting.registerContentScripts([
+    {
+      id: "sap-main",
+      matches: [portalPattern],
+      js: ["content-main.js"],
+      runAt: "document_start",
+      world: "MAIN",
+      allFrames: true,
+      persistAcrossSessions: true
+    },
+    {
+      id: "sap-iso",
+      matches: [portalPattern],
+      js: ["content.js"],
+      runAt: "document_idle",
+      allFrames: true,
+      persistAcrossSessions: true
+    }
+  ]);
+}
+
+async function ensureRegistered() {
+  const cfg = await chrome.storage.local.get(["portalPattern"]);
+  if (!cfg.portalPattern) return;
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts();
+    if (!existing.some((s) => s.id === "sap-iso")) {
+      await registerScripts(cfg.portalPattern);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+// --- Pop-out preview window ---
+
 function openOrFocusWindow() {
   if (previewWindowId != null) {
     chrome.windows.get(previewWindowId, {}, (win) => {
@@ -71,14 +118,30 @@ chrome.windows.onRemoved.addListener((id) => {
   if (id === previewWindowId) previewWindowId = null;
 });
 
-chrome.runtime.onInstalled.addListener(() => {
+// --- Lifecycle ---
+
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel
     .setPanelBehavior({ openPanelOnActionClick: true })
     .catch(() => {});
+  ensureRegistered();
+  if (details.reason === "install") {
+    chrome.runtime.openOptionsPage(); // first-run setup
+  }
 });
+chrome.runtime.onStartup.addListener(ensureRegistered);
+
+// --- Messages ---
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
+
+  if (msg.type === "registerScripts" && msg.portalPattern) {
+    registerScripts(msg.portalPattern)
+      .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true; // async response
+  }
 
   if (msg.type === "openPanel") {
     pendingData = null;

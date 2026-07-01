@@ -32,12 +32,23 @@ You only do steps 1–2 once. After that, installing is quick.
    - Select the **unzipped folder** (the one containing `manifest.json`).
    - The "SAP SRM PDF Preview" card should appear.
 
-4. **Use it**
+4. **Set up your SAP address (first time only)**
+   - The first time you load the extension, a **Settings** tab opens automatically.
+     (You can reopen it any time from `chrome://extensions` → the extension's
+     **Details** → **Extension options**.)
+   - Log into SAP in another tab, copy the address from the browser's address bar,
+     and paste it into the box.
+   - Click **Save & enable** and choose **Allow** when Chrome asks for permission.
+
+5. **Use it**
    - Log into SAP as usual.
    - Click a **下载** link — the preview opens in the side panel on the right.
 
 > Tip: If a preview ever says "your SAP session expired," just refresh/log back
 > into SAP and click the link again.
+
+> Note: The SAP address is not stored in this public repository. Each person
+> enters it once on their own machine (step 4), and it stays on their machine only.
 
 ---
 
@@ -68,10 +79,11 @@ The extension is plain HTML/JS (no build step). Files:
 
 | File | Purpose |
 | --- | --- |
-| `manifest.json` | Extension config (Manifest V3) |
+| `manifest.json` | Extension config (Manifest V3) — no hardcoded site address |
+| `options.html` / `options.js` | Settings page; user enters their SAP address on first use |
 | `content-main.js` | Intercepts SAP's `window.open` so no tab flashes |
 | `content.js` | Detects 下载 clicks, opens the side panel |
-| `background.js` | Coordinates fetch, side panel, and the pop-out window |
+| `background.js` | Requests site permission, registers content scripts, coordinates fetch/panel/pop-out |
 | `offscreen.html` / `offscreen.js` | Hidden page that fetches the file with your session |
 | `panel.html` / `panel.js` | The viewer (PDF, images, download fallback, pop-out) |
 
