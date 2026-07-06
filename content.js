@@ -17,13 +17,20 @@ function safeSend(msg) {
   }
 }
 
+// Match SAP's download links whether they're labeled 下载 (Chinese) or
+// "Download" (English). Case-insensitive so "download"/"DOWNLOAD" also match.
+function isDownloadLink(text) {
+  const t = text.toLowerCase();
+  return text.includes("下载") || t.includes("download");
+}
+
 document.addEventListener(
   "click",
   (e) => {
     const link = e.target && e.target.closest ? e.target.closest("a") : null;
     if (!link) return;
     const text = (link.textContent || "").trim();
-    if (text.includes("下载")) {
+    if (isDownloadLink(text)) {
       safeSend({ type: "openPanel" });
     }
   },

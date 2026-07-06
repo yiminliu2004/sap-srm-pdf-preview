@@ -90,7 +90,7 @@ document.getElementById("save").addEventListener("click", async () => {
   statusEl.textContent =
     "Saved and enabled for " +
     host +
-    ".\nNow open (or reload) your SAP tab and click a 下载 link.";
+    ".\nNow open (or reload) your SAP tab and click a Download (下载) link.";
 });
 
 load();

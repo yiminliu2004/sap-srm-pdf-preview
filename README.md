@@ -5,12 +5,12 @@ side panel instead of forcing you to download them.
 
 ## What it does
 
-- Click a **下载** link in SAP → the file opens in a **side panel**, no download, no tab flash.
+- Click a **Download** (下载) link in SAP → the file opens in a **side panel**, no download, no tab flash.
 - **PDFs** open in Chrome's built-in viewer (rotate, zoom, print, download).
 - **Images (JPG/PNG/…)** are shown in that same viewer, so you can rotate sideways scans.
 - **Excel / Word / zip / TIFF** files show a clean **Download** button (browsers can't preview them).
 - A **pop-out icon** (top-right of the panel) opens the file in a **separate window** that
-  updates itself every time you click a new 下载 link.
+  updates itself every time you click a new Download (下载) link.
 
 ---
 
@@ -42,7 +42,7 @@ You only do steps 1–2 once. After that, installing is quick.
 
 5. **Use it**
    - Log into SAP as usual.
-   - Click a **下载** link — the preview opens in the side panel on the right.
+   - Click a **Download** (下载) link — the preview opens in the side panel on the right.
 
 > Tip: If a preview ever says "your SAP session expired," just refresh/log back
 > into SAP and click the link again.
@@ -65,7 +65,7 @@ You only do steps 1–2 once. After that, installing is quick.
 
 ## Troubleshooting
 
-- **Nothing happens when I click 下载** — Make sure the extension card is enabled
+- **Nothing happens when I click Download** — Make sure the extension card is enabled
   in `chrome://extensions`, then reload the SAP tab.
 - **"Extension context invalidated" errors** — Harmless; they appear if the
   extension was reloaded while an SAP tab stayed open. Reload the SAP tab to clear.
@@ -82,7 +82,7 @@ The extension is plain HTML/JS (no build step). Files:
 | `manifest.json` | Extension config (Manifest V3) — no hardcoded site address |
 | `options.html` / `options.js` | Settings page; user enters their SAP address on first use |
 | `content-main.js` | Intercepts SAP's `window.open` so no tab flashes |
-| `content.js` | Detects 下载 clicks, opens the side panel |
+| `content.js` | Detects Download/下载 clicks, opens the side panel |
 | `background.js` | Requests site permission, registers content scripts, coordinates fetch/panel/pop-out |
 | `offscreen.html` / `offscreen.js` | Hidden page that fetches the file with your session |
 | `panel.html` / `panel.js` | The viewer (PDF, images, download fallback, pop-out) |

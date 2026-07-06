@@ -385,7 +385,8 @@ function renderBase64(b64) {
           "Couldn't load the file — SAP sent back a web page instead.\n\n" +
             "This almost always means your SAP session expired or you're " +
             "not logged in.\n\nFix: click into the SAP tab, make sure you're " +
-            "logged in (log in again if it asks), then click the 下载 link " +
+            "logged in (log in again if it asks), then click the Download " +
+            "(下载) link " +
             "again."
         );
       }
