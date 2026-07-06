@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SAP SRM PDF Preview",
-  "version": "7.4",
+  "version": "7.5",
   "description": "Previews SAP document files (PDF and images) in a side panel instead of downloading them. No tab flash.",
   "permissions": ["sidePanel", "offscreen", "scripting", "storage"],
   "optional_host_permissions": ["*://*/*"],

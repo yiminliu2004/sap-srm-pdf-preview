@@ -7,6 +7,21 @@
 (function () {
   const nativeOpen = window.open;
 
+  // Decide whether a window.open URL is a SAP document/file we should preview.
+  // We catch the known document service (zdms_doc) plus general SAP backend
+  // service paths (/sap/bc/...), which is how SAP serves file downloads. We
+  // avoid hijacking normal portal windows (e.g. "New Session", which opens
+  // /irj/... pages) so those keep working as usual.
+  function isDocUrl(url) {
+    if (typeof url !== "string") return false;
+    const lower = url.toLowerCase();
+    if (lower.indexOf("/irj/") !== -1) return false; // portal page, not a file
+    return (
+      lower.indexOf("zdms_doc") !== -1 || // known document service
+      lower.indexOf("/sap/bc/") !== -1 // general SAP backend/file services
+    );
+  }
+
   // A harmless stand-in so SAP's code doesn't break when it expects a window.
   function dummyWindow() {
     return {
@@ -22,7 +37,7 @@
 
   window.open = function (url) {
     try {
-      if (typeof url === "string" && url.indexOf("zdms_doc") !== -1) {
+      if (isDocUrl(url)) {
         window.postMessage({ __sapPdfPreview: true, url: url }, "*");
         return dummyWindow();
       }
