@@ -131,6 +131,62 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 chrome.runtime.onStartup.addListener(ensureRegistered);
 
+// --- Catch SAP file downloads and preview them instead ---
+//
+// Some SRM download buttons don't use window.open; they just start a normal
+// download from a SAP server URL. We intercept those, cancel them, and fetch
+// the file for preview. Only document/image files are intercepted, so things
+// like Excel "Export" downloads still work normally. Blob downloads are handled
+// in the page (content-main.js), not here, since we can't refetch a blob URL.
+
+let sapBase = null; // e.g. "minthgroup.com"
+function sapBaseFromPattern(p) {
+  const m = p && p.match(/\*:\/\/\*\.([^/]+)\/\*/);
+  return m ? m[1] : null;
+}
+chrome.storage.local.get(["domainPattern"], (cfg) => {
+  sapBase = sapBaseFromPattern(cfg.domainPattern);
+});
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.domainPattern) {
+    sapBase = sapBaseFromPattern(changes.domainPattern.newValue);
+  }
+});
+
+function isPreviewableDownload(item) {
+  const name = (item.filename || "").toLowerCase();
+  const mime = (item.mime || "").toLowerCase();
+  return (
+    mime === "application/pdf" ||
+    mime.indexOf("image/") === 0 ||
+    /\.(pdf|jpe?g|png|gif|bmp|webp|tif|tiff)$/.test(name)
+  );
+}
+
+if (chrome.downloads && chrome.downloads.onCreated) {
+  chrome.downloads.onCreated.addListener((item) => {
+    if (!sapBase) return;
+    const url = item.finalUrl || item.url || "";
+    const ref = item.referrer || "";
+    if (url.indexOf("blob:") === 0) return; // handled in the page
+    const fromSap = url.indexOf(sapBase) !== -1 || ref.indexOf(sapBase) !== -1;
+    if (!fromSap) return;
+    if (!isPreviewableDownload(item)) return; // leave Excel/other exports alone
+
+    // Stop the download and preview the file instead.
+    chrome.downloads.cancel(item.id, () => {
+      chrome.downloads.erase({ id: item.id }, () => {});
+    });
+    pendingData = { loading: true };
+    (async () => {
+      await ensureOffscreen();
+      chrome.runtime
+        .sendMessage({ type: "offscreenFetch", url })
+        .catch(() => {});
+    })();
+  });
+}
+
 // --- Messages ---
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
