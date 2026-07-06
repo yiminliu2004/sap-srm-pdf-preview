@@ -8,7 +8,7 @@ function addPopButton() {
   if (isPopup || document.getElementById("popbtn")) return;
   const b = document.createElement("button");
   b.id = "popbtn";
-  b.title = "在新窗口打开 (Open in a separate window)";
+  b.title = "Open in a separate window";
   b.innerHTML =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
@@ -133,38 +133,38 @@ function renderImage(blobUrl, mime) {
   }
 
   bar.appendChild(
-    btn("↺", "向左旋转 (Rotate left)", () => {
+    btn("↺", "Rotate left", () => {
       rotation = (rotation - 90 + 360) % 360;
       fit();
     })
   );
   bar.appendChild(
-    btn("↻", "向右旋转 (Rotate right)", () => {
+    btn("↻", "Rotate right", () => {
       rotation = (rotation + 90) % 360;
       fit();
     })
   );
   bar.appendChild(
-    btn("－", "缩小 (Zoom out)", () => {
+    btn("－", "Zoom out", () => {
       zoom = Math.max(0.05, zoom * 0.8);
       apply();
     })
   );
   bar.appendChild(
-    btn("＋", "放大 (Zoom in)", () => {
+    btn("＋", "Zoom in", () => {
       zoom = Math.min(20, zoom * 1.25);
       apply();
     })
   );
-  bar.appendChild(btn("适应", "适应窗口 (Fit)", fit));
+  bar.appendChild(btn("Fit", "Fit to window", fit));
 
   const spacer = document.createElement("div");
   spacer.className = "spacer";
   bar.appendChild(spacer);
 
   const dl = document.createElement("a");
-  dl.textContent = "⬇ 下载";
-  dl.title = "下载 (Download)";
+  dl.textContent = "⬇ Download";
+  dl.title = "Download";
   dl.href = blobUrl;
   const ext =
     mime === "image/png"
@@ -348,7 +348,7 @@ function renderDownload(bytes, filename) {
   line2.style.cssText = "margin:8px 0 4px;opacity:0.75;";
 
   const a = document.createElement("a");
-  a.textContent = "⬇ 下载 (Download)";
+  a.textContent = "⬇ Download";
   a.href = url;
   a.download = filename;
   a.style.cssText =
@@ -385,8 +385,7 @@ function renderBase64(b64) {
             "This almost always means your SAP session expired or you're " +
             "not logged in.\n\nFix: click into the SAP tab, make sure you're " +
             "logged in (log in again if it asks), then click the Download " +
-            "(下载) link " +
-            "again."
+            "link again."
         );
       }
       // Not a PDF or image (e.g. Excel/Word/zip) — offer a download instead.

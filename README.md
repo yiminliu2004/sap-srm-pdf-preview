@@ -5,12 +5,12 @@ side panel instead of forcing you to download them.
 
 ## What it does
 
-- Click a **Download** (下载) link in SAP → the file opens in a **side panel**, no download, no tab flash.
+- Click a **Download** link in SAP → the file opens in a **side panel**, no download, no tab flash.
 - **PDFs** open in Chrome's built-in viewer (rotate, zoom, print, download).
 - **Images (JPG/PNG/…)** are shown in that same viewer, so you can rotate sideways scans.
 - **Excel / Word / zip / TIFF** files show a clean **Download** button (browsers can't preview them).
 - A **pop-out icon** (top-right of the panel) opens the file in a **separate window** that
-  updates itself every time you click a new Download (下载) link.
+  updates itself every time you click a new Download link.
 
 ---
 
@@ -42,7 +42,7 @@ You only do steps 1–2 once. After that, installing is quick.
 
 5. **Use it**
    - Log into SAP as usual.
-   - Click a **Download** (下载) link — the preview opens in the side panel on the right.
+   - Click a **Download** link — the preview opens in the side panel on the right.
 
 > Tip: If a preview ever says "your SAP session expired," just refresh/log back
 > into SAP and click the link again.
@@ -81,18 +81,15 @@ The extension is plain HTML/JS (no build step). Files:
 | --- | --- |
 | `manifest.json` | Extension config (Manifest V3) — no hardcoded site address |
 | `options.html` / `options.js` | Settings page; user enters their SAP address on first use |
-| `content-main.js` | Intercepts SAP's `window.open` so no tab flashes |
-| `content.js` | Detects Download/下载 clicks, opens the side panel |
-| `background.js` | Requests site permission, registers content scripts, coordinates fetch/panel/pop-out |
+| `content-main.js` | Captures files SAP opens/builds (window.open URLs and PDF/image blobs) so nothing downloads or flashes |
+| `content.js` | Detects Download clicks, opens the side panel, forwards captured files |
+| `background.js` | Requests site permission, registers content scripts, intercepts SAP document downloads, coordinates fetch/panel/pop-out |
 | `offscreen.html` / `offscreen.js` | Hidden page that fetches the file with your session |
 | `panel.html` / `panel.js` | The viewer (PDF, images, download fallback, pop-out) |
 
 ### Cutting a release
 
-1. Zip the extension files (not the parent folder):
-   ```bash
-   cd sap-srm-pdf-preview
-   zip -r ../sap-srm-pdf-preview.zip . -x ".*"
-   ```
-2. On GitHub: **Releases → Draft a new release**, set a tag (e.g. `v6.0`),
-   attach `sap-srm-pdf-preview.zip`, and publish.
+Releases are automatic. Bump `"version"` in `manifest.json`, commit, and push
+to `main`. The GitHub Action (`.github/workflows/release.yml`) builds
+`sap-srm-pdf-preview.zip` and publishes it under a matching tag on the
+**Releases** page.

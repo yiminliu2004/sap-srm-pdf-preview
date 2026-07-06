@@ -1,8 +1,8 @@
 // Runs in the isolated extension world on the SAP portal.
-//  - On a 下载 click we open the side panel (this needs the real user click)
-//    and warm up the hidden fetcher so it's ready by the time SAP hands over
-//    the one-time document URL.
-//  - When the page world intercepts that URL, we forward it to the background.
+//  - On a Download click we open the side panel (this needs the real user
+//    click) and warm up the hidden fetcher.
+//  - When the page world captures the file (a URL or the file's bytes), we
+//    forward it to the background.
 
 // After the extension is reloaded/updated, old copies of this script can still
 // be running in an already-open SAP tab. Their connection is dead, so guard
@@ -17,11 +17,10 @@ function safeSend(msg) {
   }
 }
 
-// Match SAP's download links whether they're labeled 下载 (Chinese) or
-// "Download" (English). Case-insensitive so "download"/"DOWNLOAD" also match.
+// Match SAP's download links. Handles "Download" (English) and 下载 (Chinese)
+// so it keeps working if the label ever switches back.
 function isDownloadLink(text) {
-  const t = text.toLowerCase();
-  return text.includes("下载") || t.includes("download");
+  return text.toLowerCase().includes("download") || text.includes("下载");
 }
 
 document.addEventListener(

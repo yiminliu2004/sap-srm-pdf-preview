@@ -4,14 +4,17 @@
 // page; we then request permission for that site and register the content
 // scripts for it dynamically.
 //
-// Flow when the user clicks a 下载 link:
+// Flow when the user clicks a Download link:
 //   1. content.js sees the click and asks us to open the side panel AND warm
 //      up a hidden "offscreen" page that will do the fetch.
-//   2. content-main.js intercepts SAP's window.open call (so no tab flashes)
-//      and forwards the document URL to us.
-//   3. The offscreen page fetches the file once, turns it into base64, sends
-//      it back.
+//   2. content-main.js captures the file (a URL, or the file's bytes if SAP
+//      built it in the browser) so no tab flashes and no download happens.
+//   3. For a URL, the offscreen page fetches the file once and returns base64;
+//      for captured bytes, they're forwarded directly.
 //   4. We hand the data to the side panel, which renders it. No download.
+//
+// As a safety net, we also intercept actual SAP document/image downloads via
+// the downloads API and preview them instead (see below).
 
 let pendingData = null;
 let creating = null; // de-dupe concurrent offscreen creation
