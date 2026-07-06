@@ -27,10 +27,14 @@ function isDownloadLink(text) {
 document.addEventListener(
   "click",
   (e) => {
-    const link = e.target && e.target.closest ? e.target.closest("a") : null;
-    if (!link) return;
-    const text = (link.textContent || "").trim();
-    if (isDownloadLink(text)) {
+    const el = e.target;
+    if (!el) return;
+    // Prefer the enclosing link, but also handle non-anchor "Download" labels
+    // (Web Dynpro sometimes renders them as spans/buttons). Guard on length so
+    // we don't match a big container that happens to contain the word.
+    const link = el.closest ? el.closest("a") : null;
+    const text = ((link ? link.textContent : el.textContent) || "").trim();
+    if (text.length <= 30 && isDownloadLink(text)) {
       safeSend({ type: "openPanel" });
     }
   },
@@ -42,5 +46,8 @@ window.addEventListener("message", (e) => {
   const d = e.data;
   if (d && d.__sapPdfPreview && d.url) {
     safeSend({ type: "previewUrl", url: d.url });
+  } else if (d && d.__sapPdfPreviewData && d.b64) {
+    // File bytes captured directly from a blob in the page.
+    safeSend({ type: "fileData", b64: d.b64 });
   }
 });
