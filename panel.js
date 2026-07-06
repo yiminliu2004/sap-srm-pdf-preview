@@ -45,27 +45,6 @@ function setStatus(text) {
   c.appendChild(d);
 }
 
-const IDLE_TEXT = "Click a Download (下载) link in SAP to preview the file here…";
-
-// Show "Loading preview…", but don't let it linger. If no file shows up within
-// a few seconds (e.g. a click that doesn't actually produce a preview), fall
-// back to the idle message so we're not stuck on a "loading" screen.
-let loadingTimer = null;
-function showLoading() {
-  setStatus("Loading preview…");
-  if (loadingTimer) clearTimeout(loadingTimer);
-  loadingTimer = setTimeout(() => {
-    loadingTimer = null;
-    setStatus(IDLE_TEXT);
-  }, 8000);
-}
-function stopLoading() {
-  if (loadingTimer) {
-    clearTimeout(loadingTimer);
-    loadingTimer = null;
-  }
-}
-
 // Identify the file type from its first bytes (magic numbers).
 function detectMime(b) {
   if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46)
@@ -383,8 +362,6 @@ function renderDownload(bytes, filename) {
 }
 
 function renderBase64(b64) {
-  stopLoading();
-  setStatus("Loading preview…");
   try {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
@@ -441,12 +418,11 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (!msg) return;
   if (msg.type === "renderData" && msg.b64) {
     renderBase64(msg.b64);
-  } else if (msg.type === "loading") {
-    showLoading();
   } else if (msg.type === "fileError") {
-    stopLoading();
     setStatus("Preview failed: " + msg.error);
   }
+  // "loading" is intentionally ignored: we keep the current view until the
+  // real file is ready, so there's no separate loading screen.
 });
 
 addPopButton();
@@ -475,10 +451,9 @@ chrome.runtime.sendMessage({ type: "getPending" }, (resp) => {
   if (resp && resp.b64) {
     renderBase64(resp.b64);
   } else if (resp && resp.error) {
-    stopLoading();
     setStatus("Preview failed: " + resp.error);
   } else if (resp && resp.loading) {
-    showLoading();
+    // A file is on its way; keep the idle placeholder until it renders.
   } else if (!isPopup) {
     // Nothing pending: show the setup prompt if not configured yet.
     chrome.storage.local.get(["portalPattern"], (cfg) => {
