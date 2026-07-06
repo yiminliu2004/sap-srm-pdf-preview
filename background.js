@@ -144,7 +144,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "openPanel") {
-    pendingData = null;
+    // A download was clicked: a file is on its way. Mark "loading" so the panel
+    // shows "Loading preview…" straight away instead of the idle placeholder.
+    pendingData = { loading: true };
     const windowId = sender.tab && sender.tab.windowId;
     if (windowId != null) {
       try {
@@ -154,6 +156,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
     }
     ensureOffscreen(); // warm up the fetcher
+    // If the panel/window is already open, switch it to the loading state now.
+    chrome.runtime.sendMessage({ type: "loading" }).catch(() => {});
     return;
   }
 

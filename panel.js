@@ -419,6 +419,8 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (!msg) return;
   if (msg.type === "renderData" && msg.b64) {
     renderBase64(msg.b64);
+  } else if (msg.type === "loading") {
+    setStatus("Loading preview…");
   } else if (msg.type === "fileError") {
     setStatus("Preview failed: " + msg.error);
   }
@@ -443,15 +445,20 @@ function showSetup() {
   c.appendChild(d);
 }
 
-if (!isPopup) {
-  chrome.storage.local.get(["portalPattern"], (cfg) => {
-    if (!cfg || !cfg.portalPattern) showSetup();
-  });
-}
-
-// If a file was already fetched before this panel finished opening, grab it.
+// If a file was already fetched (or is on its way) before this panel finished
+// opening, reflect that immediately so we skip the idle placeholder.
 chrome.runtime.sendMessage({ type: "getPending" }, (resp) => {
-  if (chrome.runtime.lastError || !resp) return;
-  if (resp.b64) renderBase64(resp.b64);
-  else if (resp.error) setStatus("Preview failed: " + resp.error);
+  if (chrome.runtime.lastError) return;
+  if (resp && resp.b64) {
+    renderBase64(resp.b64);
+  } else if (resp && resp.error) {
+    setStatus("Preview failed: " + resp.error);
+  } else if (resp && resp.loading) {
+    setStatus("Loading preview…");
+  } else if (!isPopup) {
+    // Nothing pending: show the setup prompt if not configured yet.
+    chrome.storage.local.get(["portalPattern"], (cfg) => {
+      if (!cfg || !cfg.portalPattern) showSetup();
+    });
+  }
 });
