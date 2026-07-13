@@ -19,6 +19,10 @@
 let pendingData = null;
 let creating = null; // de-dupe concurrent offscreen creation
 let previewWindowId = null; // the popped-out preview window, if open
+// Only intercept downloads that happen shortly after a Download click in SRM.
+// Content scripts (and thus this click) only run on the configured SRM site, so
+// this keeps the download interceptor from firing when the user is in SAP.
+let expectingDownloadUntil = 0;
 
 async function ensureOffscreen() {
   if (await chrome.offscreen.hasDocument()) return;
@@ -156,27 +160,22 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-function isPreviewableDownload(item) {
-  const name = (item.filename || "").toLowerCase();
-  const mime = (item.mime || "").toLowerCase();
-  return (
-    mime === "application/pdf" ||
-    mime.indexOf("image/") === 0 ||
-    /\.(pdf|jpe?g|png|gif|bmp|webp|tif|tiff)$/.test(name)
-  );
-}
-
 if (chrome.downloads && chrome.downloads.onCreated) {
   chrome.downloads.onCreated.addListener((item) => {
+    // Only act right after a Download click in SRM; otherwise leave downloads
+    // alone (e.g. the "Export" button, or when browsing SAP directly). Because
+    // this is gated to a real Download click, we handle every file type here and
+    // let the panel decide: preview PDFs/images, offer a download button for the
+    // rest (Excel/Word/…).
+    if (Date.now() > expectingDownloadUntil) return;
     if (!sapBase) return;
     const url = item.finalUrl || item.url || "";
     const ref = item.referrer || "";
     if (url.indexOf("blob:") === 0) return; // handled in the page
     const fromSap = url.indexOf(sapBase) !== -1 || ref.indexOf(sapBase) !== -1;
     if (!fromSap) return;
-    if (!isPreviewableDownload(item)) return; // leave Excel/other exports alone
 
-    // Stop the download and preview the file instead.
+    // Stop the download and send the file to the panel instead.
     chrome.downloads.cancel(item.id, () => {
       chrome.downloads.erase({ id: item.id }, () => {});
     });
@@ -203,9 +202,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "openPanel") {
-    // A download was clicked: a file is on its way. Mark "loading" so the panel
-    // shows "Loading preview…" straight away instead of the idle placeholder.
+    // A Download was clicked in SRM: a file is on its way. Show "Loading…" and
+    // open the interception window so downloads.onCreated will act on it.
     pendingData = { loading: true };
+    expectingDownloadUntil = Date.now() + 15000;
     const windowId = sender.tab && sender.tab.windowId;
     if (windowId != null) {
       try {

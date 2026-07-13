@@ -53,6 +53,27 @@ saved unless the user chooses to.
 
 ## 4. Dated progress log (most recent first)
 
+### 2026-07-13 — Loading UX + scope to SRM only (v7.9)
+- **Loading state restored (cleanly).** The idle "Click a Download link"
+  placeholder was showing for the whole fetch on slower files. Now a Download
+  click shows **"Loading…"** until the file renders. If it's still loading after
+  20s (usually = not signed in), it shows a short "sign in to SAP and try again"
+  hint instead of spinning forever.
+- **Cleaner messages.** Not signed in → "Please sign in to SAP first…"; fetch
+  failure → "Couldn't load the file. Make sure you're signed into SAP…";
+  non-previewable (Excel/Word) → "This file can't be previewed. You can
+  download it:" + a Download button.
+- **Scoped the download interceptor to SRM only.** It previously matched the
+  whole company domain, so it also fired while the user was in SAP (`nafiorip`)
+  directly. Now `chrome.downloads` only acts within ~15s of a Download click in
+  SRM (`expectingDownloadUntil`), which can only happen on the configured SRM
+  site. In SAP, downloads are left untouched. Content scripts were already
+  SRM-only. Note: the side panel is still globally openable (Chrome limitation),
+  but it no longer auto-updates outside SRM.
+- Because the interceptor is now gated to a real Download click, it handles
+  **all** file types in that window (Excel routed to the panel's download
+  button); the "Export" button is unaffected since it isn't a Download click.
+
 ### 2026-07-12
 - Wrote this handover.
 - No code changes; explained the previous week's work (label change + second

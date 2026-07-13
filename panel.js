@@ -45,6 +45,28 @@ function setStatus(text) {
   c.appendChild(d);
 }
 
+// Loading state. Normally the file appears in about a second. If it takes much
+// longer, that almost always means the user isn't signed into SAP, so show a
+// short, actionable hint instead of spinning forever.
+let loadingTimer = null;
+function showLoading() {
+  setStatus("Loading…");
+  if (loadingTimer) clearTimeout(loadingTimer);
+  loadingTimer = setTimeout(() => {
+    loadingTimer = null;
+    setStatus(
+      "Still loading…\n\nIf nothing appears, go to your SAP tab and make sure " +
+        "you're signed in, then click Download again."
+    );
+  }, 20000);
+}
+function stopLoading() {
+  if (loadingTimer) {
+    clearTimeout(loadingTimer);
+    loadingTimer = null;
+  }
+}
+
 // Identify the file type from its first bytes (magic numbers).
 function detectMime(b) {
   if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46)
@@ -341,7 +363,7 @@ function renderDownload(bytes, filename) {
   wrap.id = "status";
 
   const line1 = document.createElement("div");
-  line1.textContent = "This file type can't be previewed in the browser.";
+  line1.textContent = "This file can't be previewed. You can download it:";
 
   const line2 = document.createElement("div");
   line2.textContent = filename;
@@ -362,6 +384,7 @@ function renderDownload(bytes, filename) {
 }
 
 function renderBase64(b64) {
+  stopLoading();
   try {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
@@ -381,11 +404,8 @@ function renderBase64(b64) {
         peek.indexOf("<!doctype html") !== -1 || peek.indexOf("<html") !== -1;
       if (looksLikeHtml) {
         throw new Error(
-          "Couldn't load the file — SAP sent back a web page instead.\n\n" +
-            "This almost always means your SAP session expired or you're " +
-            "not logged in.\n\nFix: click into the SAP tab, make sure you're " +
-            "logged in (log in again if it asks), then click the Download " +
-            "link again."
+          "Please sign in to SAP first.\n\nGo to your SAP tab, sign in, then " +
+            "click Download again."
         );
       }
       // Not a PDF or image (e.g. Excel/Word/zip) — offer a download instead.
@@ -417,11 +437,15 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (!msg) return;
   if (msg.type === "renderData" && msg.b64) {
     renderBase64(msg.b64);
+  } else if (msg.type === "loading") {
+    showLoading();
   } else if (msg.type === "fileError") {
-    setStatus("Preview failed: " + msg.error);
+    stopLoading();
+    setStatus(
+      "Couldn't load the file.\n\nMake sure you're signed into SAP, then click " +
+        "Download again."
+    );
   }
-  // "loading" is intentionally ignored: we keep the current view until the
-  // real file is ready, so there's no separate loading screen.
 });
 
 addPopButton();
@@ -450,9 +474,12 @@ chrome.runtime.sendMessage({ type: "getPending" }, (resp) => {
   if (resp && resp.b64) {
     renderBase64(resp.b64);
   } else if (resp && resp.error) {
-    setStatus("Preview failed: " + resp.error);
+    setStatus(
+      "Couldn't load the file.\n\nMake sure you're signed into SAP, then click " +
+        "Download again."
+    );
   } else if (resp && resp.loading) {
-    // A file is on its way; keep the idle placeholder until it renders.
+    showLoading();
   } else if (!isPopup) {
     // Nothing pending: show the setup prompt if not configured yet.
     chrome.storage.local.get(["portalPattern"], (cfg) => {
