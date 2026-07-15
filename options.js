@@ -22,7 +22,7 @@ async function refreshStatus() {
     /* ignore */
   }
   if (cfg.portalPattern && registered) {
-    statusEl.textContent = "Enabled for: " + cfg.portalPattern;
+    statusEl.textContent = "This extension is set up and enabled.";
   } else if (cfg.portalPattern) {
     statusEl.textContent =
       "Saved, but not active yet. Click \"Save & enable\" to finish.";
@@ -86,11 +86,23 @@ document.getElementById("save").addEventListener("click", async () => {
     return;
   }
 
-  await refreshStatus();
-  statusEl.textContent =
-    "Saved and enabled for " +
-    host +
-    ".\nNow open (or reload) your SAP tab and click a Download link.";
+  // All set — go back to the extensions page instead of showing a status line.
+  goToExtensionsPage();
 });
+
+// Navigate this settings tab back to chrome://extensions.
+function goToExtensionsPage() {
+  try {
+    chrome.tabs.getCurrent((tab) => {
+      if (tab && tab.id != null) {
+        chrome.tabs.update(tab.id, { url: "chrome://extensions" });
+      } else {
+        chrome.tabs.create({ url: "chrome://extensions" });
+      }
+    });
+  } catch (e) {
+    /* if navigation isn't possible, just leave the page as-is */
+  }
+}
 
 load();
